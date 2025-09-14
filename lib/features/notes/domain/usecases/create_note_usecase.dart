@@ -6,8 +6,16 @@ class CreateNoteUseCase {
 
   CreateNoteUseCase(this.repository);
 
-  Future<NoteEntity> call({required String title, required String content}) {
-    return repository.createNote(title: title, content: content);
+  Future<NoteEntity> call({
+    required String title, 
+    required String content,
+    bool isPinned = false,
+  }) {
+    return repository.createNote(
+      title: title, 
+      content: content,
+      isPinned: isPinned,
+    );
   }
 }
 

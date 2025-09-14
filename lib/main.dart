@@ -83,8 +83,10 @@ class AuthWrapper extends StatelessWidget {
 
         if (state is AuthAuthenticated) {
           print('🏡 User authenticated, showing home page');
-          // Load notes when authenticated
-          context.read<NotesBloc>().add(NotesLoadRequested());
+          // Wait a bit for Firebase Auth to fully update, then load notes
+          Future.delayed(const Duration(milliseconds: 500), () {
+            context.read<NotesBloc>().add(NotesLoadRequested());
+          });
           return const NotesHomePage();
         }
 

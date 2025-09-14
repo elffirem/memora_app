@@ -17,9 +17,14 @@ class NotesApiService {
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
         final user = FirebaseAuth.instance.currentUser;
+        print('🔐 Current user in interceptor: ${user?.uid}');
         if (user != null) {
           options.headers['X-User-ID'] = user.uid;
+          print('📤 Added X-User-ID header: ${user.uid}');
+        } else {
+          print('⚠️ No user found, request will be sent without X-User-ID header');
         }
+        print('📤 Final headers: ${options.headers}');
         handler.next(options);
       },
     ));
@@ -39,8 +44,12 @@ class NotesApiService {
   Future<List<Map<String, dynamic>>> getNotes() async {
     try {
       print('🌐 Attempting to fetch notes from: $baseUrl/notes');
+      print('🌐 Headers: ${_dio.options.headers}');
       final response = await _dio.get('/notes');
       print('✅ Successfully fetched ${response.data.length} notes from API');
+      if (response.data.isNotEmpty) {
+        print('📋 First note: ${response.data[0]}');
+      }
       return List<Map<String, dynamic>>.from(response.data);
     } catch (e) {
       print('❌ API fetch failed: $e');
@@ -63,9 +72,12 @@ class NotesApiService {
       };
       
       print('📤 Sending note data: $noteData');
+      print('📤 Headers: ${_dio.options.headers}');
       final response = await _dio.post('/notes', data: noteData);
+      print('✅ Note created successfully: ${response.data}');
       return response.data;
     } catch (e) {
+      print('❌ Failed to create note: $e');
       throw Exception('Failed to create note: $e');
     }
   }
@@ -122,6 +134,18 @@ class NotesApiService {
       return List<Map<String, dynamic>>.from(response.data);
     } catch (e) {
       throw Exception('Failed to search notes: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> summarizeNote(String noteId) async {
+    try {
+      print('🤖 Summarizing note: $noteId');
+      final response = await _dio.post('/notes/$noteId/summarize');
+      print('✅ Note summarized successfully');
+      return Map<String, dynamic>.from(response.data);
+    } catch (e) {
+      print('❌ Failed to summarize note: $e');
+      throw Exception('Failed to summarize note: $e');
     }
   }
 }

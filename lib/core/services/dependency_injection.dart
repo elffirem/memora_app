@@ -19,6 +19,8 @@ import '../../features/notes/domain/usecases/create_note_usecase.dart';
 import '../../features/notes/domain/usecases/update_note_usecase.dart';
 import '../../features/notes/domain/usecases/delete_note_usecase.dart';
 import '../../features/notes/domain/usecases/toggle_pin_note_usecase.dart';
+import '../../features/notes/domain/usecases/summarize_note_usecase.dart';
+import '../../features/notes/domain/usecases/clear_all_notes_usecase.dart';
 import '../../features/notes/presentation/bloc/notes_bloc.dart';
 
 final getIt = GetIt.instance;
@@ -55,6 +57,8 @@ void setupDependencyInjection() {
   getIt.registerLazySingleton(() => UpdateNoteUseCase(getIt()));
   getIt.registerLazySingleton(() => DeleteNoteUseCase(getIt()));
   getIt.registerLazySingleton(() => TogglePinNoteUseCase(getIt()));
+  getIt.registerLazySingleton(() => SummarizeNoteUseCase(getIt()));
+  getIt.registerLazySingleton(() => ClearAllNotesUseCase(getIt()));
 
   // Blocs
   getIt.registerFactory(() => AuthBloc(
@@ -69,6 +73,8 @@ void setupDependencyInjection() {
     updateNoteUseCase: getIt(),
     deleteNoteUseCase: getIt(),
     togglePinNoteUseCase: getIt(),
+    summarizeNoteUseCase: getIt(),
+    clearAllNotesUseCase: getIt(),
   ));
 }
 

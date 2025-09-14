@@ -22,6 +22,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   late TextEditingController _titleController;
   late TextEditingController _contentController;
   late NoteEditorViewModel _viewModel;
+  late ValueNotifier<bool> _canSummarizeNotifier;
 
   @override
   void initState() {
@@ -29,7 +30,11 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     _titleController = TextEditingController();
     _contentController = TextEditingController();
     _viewModel = NoteEditorViewModel(context: context, note: widget.note);
-    
+    _canSummarizeNotifier = ValueNotifier<bool>(false);
+
+    // Add listener to update UI when content changes
+    _contentController.addListener(_onContentChanged);
+
     // Initialize BLoC with initial values
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _viewModel.initializeEditor();
@@ -38,9 +43,17 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
 
   @override
   void dispose() {
+    _contentController.removeListener(_onContentChanged);
+    _canSummarizeNotifier.dispose();
     _titleController.dispose();
     _contentController.dispose();
     super.dispose();
+  }
+
+  void _onContentChanged() {
+    final content = _contentController.text.trim();
+    final canSummarize = content.length >= 100;
+    _canSummarizeNotifier.value = canSummarize;
   }
 
   @override
@@ -50,7 +63,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
         final hasChanges = _viewModel.hasUnsavedChanges();
         final editorTitle = _viewModel.getEditorTitle();
         final editorContent = _viewModel.getEditorContent();
-        
+
         // Update controllers when BLoC state changes
         if (_titleController.text != editorTitle) {
           _titleController.text = editorTitle;
@@ -58,7 +71,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
         if (_contentController.text != editorContent) {
           _contentController.text = editorContent;
         }
-        
+
         return Scaffold(
           body: Container(
             decoration: AppTheme.backgroundGradient,
@@ -93,7 +106,6 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
                           padding: const EdgeInsets.all(20.0),
                           child: Row(
                             children: [
-                              
                               // Back button
                               Container(
                                 width: 48,
@@ -122,9 +134,9 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
                                   ),
                                 ),
                               ),
-                              
+
                               const Spacer(),
-                              
+
                               // Save button
                               if (hasChanges)
                                 CyberpunkSaveButton(
@@ -135,7 +147,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
                         ),
                       ),
                     ),
-                    
+
                     // Editor content
                     Expanded(
                       child: Padding(
@@ -152,14 +164,15 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
                                 _viewModel.onTextChanged(value, _contentController.text);
                               },
                             ),
-                            
+
                             const SizedBox(height: 28),
-                            
+
                             // Content textarea with cyberpunk styling
                             Expanded(
                               child: CyberpunkContentField(
                                 controller: _contentController,
-                                hintText: 'Stream consciousness data... Neural patterns will be automatically encoded and stored in the quantum memory matrix.',
+                                hintText:
+                                    'Stream consciousness data... Neural patterns will be automatically encoded and stored in the quantum memory matrix.',
                                 expands: true,
                                 onChanged: (value) {
                                   _viewModel.onTextChanged(_titleController.text, value);
@@ -170,7 +183,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
                         ),
                       ),
                     ),
-                    
+
                     // Toolbar with cyberpunk styling
                     Container(
                       padding: const EdgeInsets.all(24),
@@ -187,23 +200,30 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
                           top: BorderSide(color: AppTheme.backgroundCard, width: 1),
                         ),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _buildToolbarButton('◆'),
-                          _buildToolbarButton('◉'),
-                          _buildToolbarButton('◈'),
-                          _buildToolbarButton('◇'),
-                          _buildToolbarButton('⧗'),
-                          _buildToolbarButton('◎'),
-                        ],
-                      ),
+                     
                     ),
                   ],
                 ),
               ],
             ),
           ),
+          floatingActionButton: widget.note != null
+              ? ValueListenableBuilder<bool>(
+                  valueListenable: _canSummarizeNotifier,
+                  builder: (context, canSummarize, child) {
+                    return FloatingActionButton(
+                      onPressed: canSummarize ? () => _showSummarizeDialog(context) : null,
+                      backgroundColor: canSummarize
+                          ? AppTheme.primaryOrange
+                          : AppTheme.primaryOrange.withOpacity(0.3),
+                      child: Icon(
+                        Icons.auto_awesome,
+                        color: canSummarize ? Colors.white : Colors.white.withOpacity(0.5),
+                      ),
+                    );
+                  },
+                )
+              : null,
         );
       },
     );
@@ -231,6 +251,180 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     );
   }
 
+  void _showSummarizeDialog(BuildContext context) {
+    if (widget.note == null) return;
+
+    // Check if content has at least 100 characters
+    final content = _contentController.text.trim();
+    if (content.length < 100) {
+      _showValidationToast(context, 'Content must be at least 100 characters to summarize');
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => BlocListener<NotesBloc, NotesState>(
+        listener: (context, state) {
+          if (state is NotesError) {
+            Navigator.of(context).pop();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: AppTheme.primaryRed,
+              ),
+            );
+          } else if (state is NotesLoaded) {
+            // Check if the current note has been updated with summary
+            final updatedNote = state.notes.firstWhere(
+              (note) => note.id == widget.note!.id,
+              orElse: () => widget.note!,
+            );
+
+            if (updatedNote.summary != null && updatedNote.summary?.isNotEmpty == true) {
+              Navigator.of(context).pop();
+              _showSummaryResult(context, updatedNote.summary ?? '');
+            }
+          }
+        },
+        child: AlertDialog(
+          backgroundColor: AppTheme.backgroundSecondary,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: AppTheme.backgroundCard, width: 1),
+          ),
+          title: Row(
+            children: [
+              Icon(
+                Icons.auto_awesome,
+                color: AppTheme.primaryOrange,
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'AI Summarization',
+                style: GoogleFonts.jetBrainsMono(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryOrange),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Generating summary...',
+                style: GoogleFonts.spaceGrotesk(
+                  fontSize: 14,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    // Trigger summarize event
+    context.read<NotesBloc>().add(NotesSummarizeRequested(widget.note!.id));
+  }
+
+  void _showSummaryResult(BuildContext context, String summary) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.backgroundSecondary,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: AppTheme.backgroundCard, width: 1),
+        ),
+        title: Row(
+          children: [
+            Icon(
+              Icons.auto_awesome,
+              color: AppTheme.primaryOrange,
+              size: 24,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Summarization:',
+              style: GoogleFonts.jetBrainsMono(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+          ],
+        ),
+        content: Container(
+          constraints: const BoxConstraints(maxHeight: 300),
+          child: SingleChildScrollView(
+            child: Text(
+              summary,
+              style: GoogleFonts.spaceGrotesk(
+                fontSize: 14,
+                color: AppTheme.textPrimary,
+                height: 1.5,
+              ),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              'Close',
+              style: GoogleFonts.jetBrainsMono(
+                color: AppTheme.primaryOrange,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showValidationToast(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              Icons.warning_amber_rounded,
+              color: AppTheme.primaryOrange,
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: GoogleFonts.spaceGrotesk(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: AppTheme.backgroundSecondary,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: const BorderSide(color: AppTheme.primaryOrange, width: 1),
+        ),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
 }
 
 // Custom painter for animated constellation background

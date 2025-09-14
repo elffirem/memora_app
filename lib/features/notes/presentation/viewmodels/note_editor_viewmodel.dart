@@ -54,6 +54,9 @@ class NoteEditorViewModel {
       context.read<NotesBloc>().add(
         NotesCreateRequested(title: title, content: content),
       );
+      // Reset editor state and pop immediately for create
+      context.read<NotesBloc>().add(NotesEditorReset());
+      Navigator.of(context).pop();
     } else {
       // Update existing note
       context.read<NotesBloc>().add(
@@ -63,11 +66,10 @@ class NoteEditorViewModel {
           content: content,
         ),
       );
+      // Reset editor state and pop immediately for update
+      context.read<NotesBloc>().add(NotesEditorReset());
+      Navigator.of(context).pop();
     }
-
-    // Reset editor state
-    context.read<NotesBloc>().add(NotesEditorReset());
-    Navigator.of(context).pop();
   }
 
   // Handle back navigation with unsaved changes dialog

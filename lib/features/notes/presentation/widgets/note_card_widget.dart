@@ -205,6 +205,7 @@ class _NoteCardWidgetState extends State<NoteCardWidget> with SingleTickerProvid
                             ),
                           ],
 
+
                           const SizedBox(height: 18),
 
                           // Footer with timestamp

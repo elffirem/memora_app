@@ -7,6 +7,7 @@ abstract class NotesLocalDataSource {
   Future<void> cacheNote(NoteModel note);
   Future<void> deleteNote(String id);
   Future<List<NoteModel>> searchNotes(String query);
+  Future<void> clearAllNotes(); // YENİ METOD
 }
 
 class NotesLocalDataSourceImpl implements NotesLocalDataSource {
@@ -102,6 +103,17 @@ class NotesLocalDataSourceImpl implements NotesLocalDataSource {
       return note.title.toLowerCase().contains(lowerQuery) ||
              note.content.toLowerCase().contains(lowerQuery);
     }).toList();
+  }
+
+  @override
+  Future<void> clearAllNotes() async {
+    try {
+      print('🧹 Clearing all notes from local storage...');
+      await _box.clear();
+      print('✅ Local storage cleared successfully');
+    } catch (e) {
+      print('❌ Error clearing local storage: $e');
+    }
   }
 }
 
