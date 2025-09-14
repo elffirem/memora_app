@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:memora_app/features/auth/presentation/bloc/auth_event.dart';
+import 'package:memora_app/features/auth/presentation/bloc/auth_state.dart';
 
 import '../bloc/auth_bloc.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -265,7 +267,29 @@ class _RegisterFormState extends State<RegisterForm> {
           const SizedBox(height: 40),
           
           // Register button with gradient
-          BlocBuilder<AuthBloc, AuthState>(
+          BlocConsumer<AuthBloc, AuthState>(
+            listener: (context, state) {
+              if (state is AuthError) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      state.message,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                    backgroundColor: AppTheme.primaryRed,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    margin: const EdgeInsets.all(16),
+                    duration: const Duration(seconds: 4),
+                  ),
+                );
+              }
+            },
             builder: (context, state) {
               return CustomButton(
                 text: 'REGISTER',

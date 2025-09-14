@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../bloc/auth_bloc.dart';
+import '../bloc/auth_state.dart';
 import '../widgets/login_form.dart';
 import '../widgets/register_form.dart';
 import '../../../../core/theme/app_theme.dart';

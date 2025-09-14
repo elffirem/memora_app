@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../domain/entities/note_entity.dart';
 import '../bloc/notes_bloc.dart';
+import '../bloc/notes_event.dart';
 import 'note_card_widget.dart';
 import '../pages/note_editor_page.dart';
 

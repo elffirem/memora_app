@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:memora_app/features/auth/presentation/bloc/auth_event.dart';
+import 'package:memora_app/features/auth/presentation/bloc/auth_state.dart';
+import 'package:memora_app/features/notes/presentation/bloc/notes_event.dart';
 
 import 'core/theme/app_theme.dart';
 import 'core/services/dependency_injection.dart';
@@ -15,20 +18,15 @@ import 'firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase
   try {
     await Firebase.initializeApp();
-    print('✅ Firebase initialized successfully');
   } catch (e) {
-    print('❌ Firebase initialization failed: $e');
   }
 
-  // Initialize Hive for local storage
   await Hive.initFlutter();
   await Hive.openBox('notes');
   await Hive.openBox('user_prefs');
 
-  // Setup dependency injection
   setupDependencyInjection();
 
   runApp(const NotesApp());
@@ -70,10 +68,7 @@ class AuthWrapper extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
-        print('🏠 AuthWrapper state: ${state.runtimeType}');
-
         if (state is AuthLoading) {
-          print('⏳ Showing loading...');
           return const Scaffold(
             body: Center(
               child: CircularProgressIndicator(),
@@ -82,15 +77,11 @@ class AuthWrapper extends StatelessWidget {
         }
 
         if (state is AuthAuthenticated) {
-          print('🏡 User authenticated, showing home page');
-          // Wait a bit for Firebase Auth to fully update, then load notes
           Future.delayed(const Duration(milliseconds: 500), () {
             context.read<NotesBloc>().add(NotesLoadRequested());
           });
           return const NotesHomePage();
         }
-
-        print('🔐 Showing auth page');
         return const AuthPage();
       },
     );

@@ -81,7 +81,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   String _getFirebaseErrorMessage(String code) {
-    print('🔥 Firebase Auth Error Code: $code'); // Debug log
+    // Firebase Auth Error Code: $code
     switch (code) {
       case 'user-not-found':
         return 'No user found for this email. Please register first.';
@@ -104,7 +104,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       case 'network-request-failed':
         return 'Network error. Please check your internet connection.';
       default:
-        print('🔥 Unhandled Firebase error: $code'); // Debug unknown errors
+        // Unhandled Firebase error: $code
         return 'Authentication failed. Please check your credentials and try again.';
     }
   }

@@ -52,7 +52,6 @@ class _NoteCardWidgetState extends State<NoteCardWidget> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
-    print('🎨 Building NoteCard for: ${widget.note.title} (pinned: ${widget.note.isPinned})');
     return AnimatedBuilder(
       animation: _scaleAnimation,
       builder: (context, child) {

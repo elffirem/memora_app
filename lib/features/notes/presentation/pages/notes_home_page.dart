@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:memora_app/features/auth/presentation/bloc/auth_event.dart';
+import 'package:memora_app/features/auth/presentation/bloc/auth_state.dart';
+import 'package:memora_app/features/notes/presentation/bloc/notes_event.dart';
+import 'package:memora_app/features/notes/presentation/bloc/notes_state.dart';
 
 import '../bloc/notes_bloc.dart';
 import '../widgets/notes_list_widget.dart';
@@ -30,14 +34,11 @@ class _NotesHomePageState extends State<NotesHomePage> {
     super.initState();
     _viewModel = NotesHomeViewModel(context: context);
     
-    // Wait a bit for Firebase Auth to be ready, then load notes
     Future.delayed(const Duration(milliseconds: 300), () {
       _viewModel.loadNotes();
     });
     
-    // Listen to connectivity changes
     context.read<ConnectivityService>().stream.listen((isConnected) {
-      // Connectivity state is handled by the view model
     });
   }
 
@@ -48,10 +49,7 @@ class _NotesHomePageState extends State<NotesHomePage> {
   }
 
   void _addBulkTestNotes(BuildContext context) {
-    // Debug: Check current user
     final currentUser = FirebaseAuth.instance.currentUser;
-    print('🔍 Current user: ${currentUser?.email}');
-    print('🔍 Current user ID: ${currentUser?.uid}');
     
     final notes = [
       {"title": "Team Meeting", "content": "Discuss project roadmap and assign new tasks for next sprint."},
@@ -110,10 +108,8 @@ class _NotesHomePageState extends State<NotesHomePage> {
       {"title": "Long To-Do List", "content": "Finish preparing slides for Monday's presentation. Send updated project timeline to the team. Call the bank regarding the new account. Grocery shopping: rice, chicken, fruits, snacks. Laundry before the weekend trip. Buy Sarah's birthday gift (headphones). Read at least 20 pages of my current book. Meditate for 10 minutes before bed."},
     ];
 
-    // Create bulk notes directly
     context.read<NotesBloc>().add(NotesBulkCreateRequested(notes: notes));
     
-    // Show success message
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -196,16 +192,13 @@ class _NotesHomePageState extends State<NotesHomePage> {
         decoration: AppTheme.backgroundGradient,
         child: Stack(
           children: [
-            // Animated background constellation
             Positioned.fill(
               child: CustomPaint(
                 painter: ConstellationPainter(),
               ),
             ),
-            // Main content
             Column(
               children: [
-                // Custom header with cyberpunk styling
                 Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -226,11 +219,9 @@ class _NotesHomePageState extends State<NotesHomePage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Header with title, connectivity status and logout button
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              // App title with gradient
                               ShaderMask(
                               shaderCallback: (bounds) => LinearGradient(
                                 colors: [AppTheme.primaryPurple, AppTheme.primaryRed, AppTheme.primaryCyan],
@@ -245,10 +236,8 @@ class _NotesHomePageState extends State<NotesHomePage> {
                                   ),
                                 ),
                               ),
-                              // Right side: Test button, Connectivity status and Logout button
                               Row(
                                 children: [
-                                  // Test bulk notes button (temporary)
                                   GestureDetector(
                                     onTap: () {
                                       _addBulkTestNotes(context);
@@ -274,7 +263,6 @@ class _NotesHomePageState extends State<NotesHomePage> {
                                     ),
                                   ),
                                   const SizedBox(width: 12),
-                                  // Connectivity status
                                   BlocBuilder<ConnectivityService, bool>(
                                     builder: (context, isConnected) {
                                       return Container(
@@ -305,7 +293,6 @@ class _NotesHomePageState extends State<NotesHomePage> {
                                     },
                                   ),
                                   const SizedBox(width: 16),
-                                  // Logout button
                                InkWell( //I use this inkwell + icon because IconButton has some alignment issues
                                            onTap: () => _showLogoutDialog(context),
                                             child: Icon(
@@ -321,7 +308,6 @@ class _NotesHomePageState extends State<NotesHomePage> {
                           
                           const SizedBox(height: 20),
                           
-                          // Welcome message
                           BlocBuilder<AuthBloc, AuthState>(
                             builder: (context, state) {
                               String welcomeText = 'WELCOME';
@@ -343,7 +329,6 @@ class _NotesHomePageState extends State<NotesHomePage> {
                           
                           const SizedBox(height: 20),
                           
-                          // Search bar with cyberpunk styling
                           Container(
                             decoration: BoxDecoration(
                               color: Colors.black.withOpacity(0.6),
@@ -370,7 +355,6 @@ class _NotesHomePageState extends State<NotesHomePage> {
                                 suffixIcon: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    // Clear button
                                     if (_searchController.text.isNotEmpty)
                                       GestureDetector(
                                         onTap: () {
@@ -391,7 +375,6 @@ class _NotesHomePageState extends State<NotesHomePage> {
                                           ),
                                         ),
                                       ),
-                                    // Status indicator
                                     Container(
                                       margin: const EdgeInsets.only(right: 20),
                                       child: Text(
@@ -421,7 +404,6 @@ class _NotesHomePageState extends State<NotesHomePage> {
                   ),
                 ),
                 
-                // Notes list
                 Expanded(
                   child: BlocConsumer<NotesBloc, NotesState>(
                     listener: (context, state) {
@@ -444,7 +426,6 @@ class _NotesHomePageState extends State<NotesHomePage> {
                         );
                       }
                       
-                      // Show undo snackbar for deleted notes (only once per note)
                       if (state is NotesLoaded && 
                           state.recentlyDeletedNote != null && 
                           _lastDeletedNoteId != state.recentlyDeletedNote!.id &&
@@ -470,11 +451,9 @@ class _NotesHomePageState extends State<NotesHomePage> {
                                   text: 'RESTORE',
                                   onPressed: () {
                                     final noteToRestore = state.recentlyDeletedNote!;
-                                    // Immediately hide snackbar and reset flags
                                     ScaffoldMessenger.of(context).hideCurrentSnackBar();
                                     _lastDeletedNoteId = null;
                                     _isSnackBarShowing = false;
-                                    // Then send the restore event
                                     context.read<NotesBloc>().add(NotesUndoDeleteRequested(noteToRestore));
                                   },
                                   isGradient: true,
@@ -495,14 +474,12 @@ class _NotesHomePageState extends State<NotesHomePage> {
                             duration: const Duration(seconds: 4),
                           ),
                         ).closed.then((_) {
-                          // Only reset if we haven't manually reset already
                           if (_isSnackBarShowing) {
                             _isSnackBarShowing = false;
                           }
                         });
                       }
                       
-                      // Reset flag when note is restored (but don't interfere with manual resets)
                       if (state is NotesLoaded && 
                           state.recentlyDeletedNote == null && 
                           _lastDeletedNoteId != null &&
@@ -596,7 +573,6 @@ class _NotesHomePageState extends State<NotesHomePage> {
               ],
             ),
             
-            // Floating Action Button with cyberpunk styling
             Positioned(
               bottom: 32,
               right: 24,
@@ -646,7 +622,6 @@ class _NotesHomePageState extends State<NotesHomePage> {
   }
 }
 
-// Custom painter for animated constellation background
 class ConstellationPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
@@ -654,7 +629,6 @@ class ConstellationPainter extends CustomPainter {
       ..color = AppTheme.primaryPurple.withOpacity(0.3)
       ..style = PaintingStyle.fill;
 
-    // Draw constellation points
     final points = [
       Offset(size.width * 0.1, size.height * 0.1),
       Offset(size.width * 0.9, size.height * 0.2),

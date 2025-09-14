@@ -5,7 +5,7 @@ class NoteModel extends Equatable {
   final String id;
   final String title;
   final String content;
-  final String? summary;  // YENİ ALAN
+  final String? summary; 
   final String userId;
   final bool isPinned;
   final DateTime createdAt;
@@ -15,7 +15,7 @@ class NoteModel extends Equatable {
     required this.id,
     required this.title,
     required this.content,
-    this.summary,  // YENİ ALAN
+    this.summary, 
     required this.userId,
     required this.isPinned,
     required this.createdAt,
@@ -27,7 +27,7 @@ class NoteModel extends Equatable {
       id: json['id'] as String,
       title: json['title'] as String,
       content: json['content'] as String,
-      summary: json['summary'] as String?,  // YENİ ALAN
+      summary: json['summary'] as String?,  
       userId: json['user_id'] as String,
       isPinned: json['is_pinned'] as bool? ?? false,
       createdAt: DateTime.parse(json['created_at'] as String),
@@ -40,7 +40,7 @@ class NoteModel extends Equatable {
       'id': id,
       'title': title,
       'content': content,
-      'summary': summary,  // YENİ ALAN
+      'summary': summary,  
       'user_id': userId,
       'is_pinned': isPinned,
       'created_at': createdAt.toIso8601String(),
@@ -52,7 +52,7 @@ class NoteModel extends Equatable {
     String? id,
     String? title,
     String? content,
-    String? summary,  // YENİ ALAN
+    String? summary,  
     String? userId,
     bool? isPinned,
     DateTime? createdAt,
@@ -62,7 +62,7 @@ class NoteModel extends Equatable {
       id: id ?? this.id,
       title: title ?? this.title,
       content: content ?? this.content,
-      summary: summary ?? this.summary,  // YENİ ALAN
+      summary: summary ?? this.summary,  
       userId: userId ?? this.userId,
       isPinned: isPinned ?? this.isPinned,
       createdAt: createdAt ?? this.createdAt,
@@ -75,7 +75,7 @@ class NoteModel extends Equatable {
       id: id,
       title: title,
       content: content,
-      summary: summary,  // YENİ ALAN
+      summary: summary,  
       isPinned: isPinned,
       userId: userId,
       createdAt: createdAt,
@@ -88,7 +88,7 @@ class NoteModel extends Equatable {
       id: map['id'] as String? ?? '',
       title: map['title'] as String? ?? '',
       content: map['content'] as String? ?? '',
-      summary: map['summary'] as String?,  // YENİ ALAN
+      summary: map['summary'] as String?,  
       userId: map['userId'] as String? ?? 'local_user',
       isPinned: map['isPinned'] as bool? ?? false,
       createdAt: map['createdAt'] != null 
@@ -105,7 +105,7 @@ class NoteModel extends Equatable {
       'id': id,
       'title': title,
       'content': content,
-      'summary': summary,  // YENİ ALAN
+      'summary': summary,  
       'userId': userId,
       'isPinned': isPinned,
       'createdAt': createdAt.toIso8601String(),

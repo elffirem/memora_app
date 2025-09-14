@@ -6,31 +6,23 @@ class NotesApiService {
   late final Dio _dio;
 
   NotesApiService() {
-    print('🔧 Initializing NotesApiService with baseUrl: $baseUrl');
     _dio = Dio(BaseOptions(
       baseUrl: baseUrl,
       connectTimeout: const Duration(seconds: 5),
       receiveTimeout: const Duration(seconds: 3),
     ));
 
-    // Add request interceptor to include user ID
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
         final user = FirebaseAuth.instance.currentUser;
-        print('🔐 Current user in interceptor: ${user?.uid}');
         if (user != null) {
           options.headers['X-User-ID'] = user.uid;
-          print('📤 Added X-User-ID header: ${user.uid}');
-        } else {
-          print('⚠️ No user found, request will be sent without X-User-ID header');
         }
-        print('📤 Final headers: ${options.headers}');
         handler.next(options);
       },
     ));
   }
 
-  // Health check
   Future<Map<String, dynamic>> healthCheck() async {
     try {
       final response = await _dio.get('/health');
@@ -40,49 +32,34 @@ class NotesApiService {
     }
   }
 
-  // Get all notes
   Future<List<Map<String, dynamic>>> getNotes() async {
     try {
-      print('🌐 Attempting to fetch notes from: $baseUrl/notes');
-      print('🌐 Headers: ${_dio.options.headers}');
       final response = await _dio.get('/notes');
-      print('✅ Successfully fetched ${response.data.length} notes from API');
-      if (response.data.isNotEmpty) {
-        print('📋 First note: ${response.data[0]}');
-      }
       return List<Map<String, dynamic>>.from(response.data);
     } catch (e) {
-      print('❌ API fetch failed: $e');
       throw Exception('Failed to fetch notes: $e');
     }
   }
 
-  // Create note
   Future<Map<String, dynamic>> createNote({
     required String title,
     required String content,
     bool isPinned = false,
   }) async {
     try {
-      // Ensure title and content are not empty for backend validation
       final noteData = {
         'title': title.trim().isEmpty ? 'Untitled' : title.trim(),
         'content': content.trim().isEmpty ? ' ' : content.trim(), // Backend requires non-empty content
         'is_pinned': isPinned,
       };
       
-      print('📤 Sending note data: $noteData');
-      print('📤 Headers: ${_dio.options.headers}');
       final response = await _dio.post('/notes', data: noteData);
-      print('✅ Note created successfully: ${response.data}');
       return response.data;
     } catch (e) {
-      print('❌ Failed to create note: $e');
       throw Exception('Failed to create note: $e');
     }
   }
 
-  // Update note
   Future<Map<String, dynamic>> updateNote({
     required String id,
     required String title,
@@ -98,7 +75,6 @@ class NotesApiService {
         data['is_pinned'] = isPinned;
       }
       
-      print('📤 Updating note data: $data');
       final response = await _dio.put('/notes/$id', data: data);
       return response.data;
     } catch (e) {
@@ -106,7 +82,6 @@ class NotesApiService {
     }
   }
 
-  // Delete note
   Future<void> deleteNote(String id) async {
     try {
       await _dio.delete('/notes/$id');
@@ -115,7 +90,6 @@ class NotesApiService {
     }
   }
 
-  // Toggle pin note
   Future<Map<String, dynamic>> togglePinNote(String id) async {
     try {
       final response = await _dio.patch('/notes/$id/toggle-pin');
@@ -125,7 +99,6 @@ class NotesApiService {
     }
   }
 
-  // Search notes
   Future<List<Map<String, dynamic>>> searchNotes(String query) async {
     try {
       final response = await _dio.get('/notes/search', queryParameters: {
@@ -139,12 +112,9 @@ class NotesApiService {
 
   Future<Map<String, dynamic>> summarizeNote(String noteId) async {
     try {
-      print('🤖 Summarizing note: $noteId');
       final response = await _dio.post('/notes/$noteId/summarize');
-      print('✅ Note summarized successfully');
       return Map<String, dynamic>.from(response.data);
     } catch (e) {
-      print('❌ Failed to summarize note: $e');
       throw Exception('Failed to summarize note: $e');
     }
   }

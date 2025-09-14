@@ -176,7 +176,6 @@ class CustomButton extends StatelessWidget {
   }
 }
 
-// Specialized cyberpunk button for save actions
 class CyberpunkSaveButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;
@@ -209,7 +208,6 @@ class CyberpunkSaveButton extends StatelessWidget {
   }
 }
 
-// Specialized cyberpunk button for secondary actions
 class CyberpunkSecondaryButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;

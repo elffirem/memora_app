@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  // Dark Avant-garde Color Palette
   static const Color primaryPurple = Color(0xFF9333EA);
   static const Color primaryRed = Color(0xFFEF4444);
   static const Color primaryCyan = Color(0xFF06B6D4);
@@ -206,7 +205,6 @@ class AppTheme {
     );
   }
 
-  // Custom gradient decorations
   static BoxDecoration get primaryGradient => BoxDecoration(
     gradient: const LinearGradient(
       begin: Alignment.topLeft,

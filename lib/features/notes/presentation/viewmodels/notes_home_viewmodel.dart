@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../domain/entities/note_entity.dart';
 import '../bloc/notes_bloc.dart';
+import '../bloc/notes_event.dart';
+import '../bloc/notes_state.dart';
 import '../pages/note_editor_page.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/custom_button.dart';

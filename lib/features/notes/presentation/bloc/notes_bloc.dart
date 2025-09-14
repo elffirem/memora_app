@@ -1,5 +1,4 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:equatable/equatable.dart';
 
 import '../../domain/entities/note_entity.dart';
 import '../../domain/usecases/get_notes_usecase.dart';
@@ -9,209 +8,8 @@ import '../../domain/usecases/delete_note_usecase.dart';
 import '../../domain/usecases/toggle_pin_note_usecase.dart';
 import '../../domain/usecases/summarize_note_usecase.dart';
 import '../../domain/usecases/clear_all_notes_usecase.dart';
-
-// Events
-abstract class NotesEvent extends Equatable {
-  @override
-  List<Object?> get props => [];
-}
-
-class NotesLoadRequested extends NotesEvent {}
-
-class NotesSearchRequested extends NotesEvent {
-  final String query;
-
-  NotesSearchRequested(this.query);
-
-  @override
-  List<Object?> get props => [query];
-}
-
-class NotesCreateRequested extends NotesEvent {
-  final String title;
-  final String content;
-
-  NotesCreateRequested({required this.title, required this.content});
-
-  @override
-  List<Object?> get props => [title, content];
-}
-
-class NotesBulkCreateRequested extends NotesEvent {
-  final List<Map<String, String>> notes; // [{title: "...", content: "..."}, ...]
-
-  NotesBulkCreateRequested({required this.notes});
-
-  @override
-  List<Object?> get props => [notes];
-}
-
-class NotesClearAllRequested extends NotesEvent {}
-
-class NotesUpdateRequested extends NotesEvent {
-  final String id;
-  final String title;
-  final String content;
-
-  NotesUpdateRequested({
-    required this.id,
-    required this.title,
-    required this.content,
-  });
-
-  @override
-  List<Object?> get props => [id, title, content];
-}
-
-class NotesDeleteRequested extends NotesEvent {
-  final String id;
-
-  NotesDeleteRequested(this.id);
-
-  @override
-  List<Object?> get props => [id];
-}
-
-class NotesUndoDeleteRequested extends NotesEvent {
-  final NoteEntity note;
-
-  NotesUndoDeleteRequested(this.note);
-
-  @override
-  List<Object?> get props => [note];
-}
-
-class NotesTogglePinRequested extends NotesEvent {
-  final String id;
-
-  NotesTogglePinRequested(this.id);
-
-  @override
-  List<Object?> get props => [id];
-}
-
-class NotesSummarizeRequested extends NotesEvent {
-  final String id;
-
-  NotesSummarizeRequested(this.id);
-
-  @override
-  List<Object?> get props => [id];
-}
-
-class NotesEditorTextChanged extends NotesEvent {
-  final String title;
-  final String content;
-
-  NotesEditorTextChanged({required this.title, required this.content});
-
-  @override
-  List<Object?> get props => [title, content];
-}
-
-class NotesEditorInitialized extends NotesEvent {
-  final String? initialTitle;
-  final String? initialContent;
-
-  NotesEditorInitialized({this.initialTitle, this.initialContent});
-
-  @override
-  List<Object?> get props => [initialTitle, initialContent];
-}
-
-class NotesEditorReset extends NotesEvent {}
-
-class NotesNoteDeleted extends NotesEvent {
-  final NoteEntity note;
-
-  NotesNoteDeleted(this.note);
-
-  @override
-  List<Object?> get props => [note];
-}
-
-class NotesUndoDelete extends NotesEvent {}
-
-// States
-abstract class NotesState extends Equatable {
-  @override
-  List<Object?> get props => [];
-}
-
-class NotesInitial extends NotesState {}
-
-class NotesLoading extends NotesState {}
-
-class NotesLoaded extends NotesState {
-  final List<NoteEntity> notes;
-  final List<NoteEntity> filteredNotes;
-  final String searchQuery;
-  final String editorTitle;
-  final String editorContent;
-  final String originalEditorTitle;
-  final String originalEditorContent;
-  final bool hasEditorChanges;
-  final NoteEntity? recentlyDeletedNote;
-
-  NotesLoaded({
-    required this.notes,
-    required this.filteredNotes,
-    this.searchQuery = '',
-    this.editorTitle = '',
-    this.editorContent = '',
-    this.originalEditorTitle = '',
-    this.originalEditorContent = '',
-    this.hasEditorChanges = false,
-    this.recentlyDeletedNote,
-  });
-
-  @override
-  List<Object?> get props => [notes, filteredNotes, searchQuery, editorTitle, editorContent, originalEditorTitle, originalEditorContent, hasEditorChanges, recentlyDeletedNote];
-
-  NotesLoaded copyWith({
-    List<NoteEntity>? notes,
-    List<NoteEntity>? filteredNotes,
-    String? searchQuery,
-    String? editorTitle,
-    String? editorContent,
-    String? originalEditorTitle,
-    String? originalEditorContent,
-    bool? hasEditorChanges,
-    NoteEntity? recentlyDeletedNote,
-    bool clearRecentlyDeletedNote = false,
-  }) {
-    return NotesLoaded(
-      notes: notes ?? this.notes,
-      filteredNotes: filteredNotes ?? this.filteredNotes,
-      searchQuery: searchQuery ?? this.searchQuery,
-      editorTitle: editorTitle ?? this.editorTitle,
-      editorContent: editorContent ?? this.editorContent,
-      originalEditorTitle: originalEditorTitle ?? this.originalEditorTitle,
-      originalEditorContent: originalEditorContent ?? this.originalEditorContent,
-      hasEditorChanges: hasEditorChanges ?? this.hasEditorChanges,
-      recentlyDeletedNote: clearRecentlyDeletedNote ? null : (recentlyDeletedNote ?? this.recentlyDeletedNote),
-    );
-  }
-}
-
-class NotesError extends NotesState {
-  final String message;
-
-  NotesError(this.message);
-
-  @override
-  List<Object?> get props => [message];
-}
-
-class NotesOperationSuccess extends NotesState {
-  final String message;
-  final List<NoteEntity> notes;
-
-  NotesOperationSuccess(this.message, this.notes);
-
-  @override
-  List<Object?> get props => [message, notes];
-}
+import 'notes_event.dart';
+import 'notes_state.dart';
 
 // Bloc
 class NotesBloc extends Bloc<NotesEvent, NotesState> {
@@ -326,11 +124,8 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
     final currentState = state as NotesLoaded;
     
     try {
-      print('📝 Creating note: ${event.title}');
       final newNote = await createNoteUseCase(title: event.title, content: event.content, isPinned: false);
-      print('✅ Note created successfully with ID: ${newNote.id}');
       
-      // Add the new note to the current list immediately (optimistic update)
       final updatedNotes = List<NoteEntity>.from(currentState.notes);
       updatedNotes.add(newNote);
       final sortedNotes = _sortNotes(updatedNotes);
@@ -343,10 +138,7 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
         notes: sortedNotes,
         filteredNotes: sortedFilteredNotes,
       ));
-      
-      print('📋 Note added to UI, total notes: ${sortedNotes.length}');
     } catch (e) {
-      print('❌ Note creation failed: $e');
       emit(NotesError(e.toString().replaceFirst('Exception: ', '')));
     }
   }
@@ -359,32 +151,21 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
     final currentState = state as NotesLoaded;
     
     try {
-      print('📝 Creating ${event.notes.length} notes in bulk...');
-      
-      // Create notes one by one and add to UI immediately
       final newNotes = <NoteEntity>[];
-      int successCount = 0;
-      int failCount = 0;
       
       for (int i = 0; i < event.notes.length; i++) {
         final noteData = event.notes[i];
         try {
-          print('📝 Creating note ${i + 1}/${event.notes.length}: "${noteData['title']}"');
           final newNote = await createNoteUseCase(
             title: noteData['title'] ?? 'Untitled', 
             content: noteData['content'] ?? '', 
             isPinned: false
           );
           newNotes.add(newNote);
-          successCount++;
-          print('✅ Note ${i + 1} created successfully with ID: ${newNote.id}');
         } catch (e) {
-          print('❌ Failed to create note ${i + 1} "${noteData['title']}": $e');
-          failCount++;
+          // Continue with other notes if one fails
         }
       }
-      
-      print('✅ Bulk creation completed: $successCount successful, $failCount failed');
       
       // Add all new notes to the current list
       final updatedNotes = List<NoteEntity>.from(currentState.notes);
@@ -400,10 +181,7 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
         filteredNotes: sortedFilteredNotes,
       ));
       
-      print('📋 ${newNotes.length} notes added to UI, total notes: ${sortedNotes.length}');
-      
     } catch (e) {
-      print('❌ Bulk note creation failed: $e');
       emit(NotesError(e.toString().replaceFirst('Exception: ', '')));
     }
   }
@@ -413,15 +191,9 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
     Emitter<NotesState> emit,
   ) async {
     try {
-      print('🧹 Clearing all notes from local storage...');
       await clearAllNotesUseCase();
-      print('✅ All notes cleared successfully');
-      
-      // Emit empty state
       emit(NotesLoaded(notes: [], filteredNotes: []));
-      
     } catch (e) {
-      print('❌ Failed to clear notes: $e');
       emit(NotesError(e.toString().replaceFirst('Exception: ', '')));
     }
   }
@@ -469,11 +241,8 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
     
     // Perform the actual update in background
     try {
-      print('📝 Updating note: ${event.id}');
       await updateNoteUseCase(id: event.id, title: event.title, content: event.content);
-      print('✅ Note updated successfully');
     } catch (e) {
-      print('❌ Note update failed: $e');
       // Revert the change if it failed
       final revertedNotes = List<NoteEntity>.from(currentState.notes);
       final revertedFilteredNotes = List<NoteEntity>.from(currentState.filteredNotes);
@@ -521,9 +290,7 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
     
     // Perform the actual delete in background
     try {
-      print('🗑️ Deleting note: ${event.id}');
       await deleteNoteUseCase(event.id);
-      print('✅ Note deleted successfully');
       
       // Clear the recently deleted note after successful delete (after 4 seconds)
       Future.delayed(const Duration(seconds: 4), () {
@@ -533,7 +300,6 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
         }
       });
     } catch (e) {
-      print('❌ Note deletion failed: $e');
       // Revert the change if it failed
       final revertedNotes = List<NoteEntity>.from(currentState.notes);
       final revertedFilteredNotes = List<NoteEntity>.from(currentState.filteredNotes);
@@ -558,13 +324,11 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
     
     // First, restore the note in backend
     try {
-      print('🔄 Restoring note in backend: ${event.note.title}');
       final restoredNote = await createNoteUseCase(
         title: event.note.title, 
         content: event.note.content,
         isPinned: event.note.isPinned,
       );
-      print('✅ Note restored successfully in backend with ID: ${restoredNote.id}');
       
       // Add the restored note (with new ID from backend) to the list
       final updatedNotes = List<NoteEntity>.from(currentState.notes);
@@ -586,7 +350,6 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
       ));
       
     } catch (e) {
-      print('❌ Failed to restore note in backend: $e');
       // If backend restore fails, still add to UI but with original note
       final updatedNotes = List<NoteEntity>.from(currentState.notes);
       updatedNotes.add(event.note);
@@ -646,11 +409,8 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
     
     // Perform the actual toggle in background
     try {
-      print('📌 Toggling pin for note: ${event.id}');
       await togglePinNoteUseCase(event.id);
-      print('✅ Pin toggle successful');
     } catch (e) {
-      print('❌ Pin toggle failed: $e');
       // Revert the change if it failed
       final revertedNote = note.copyWith(isPinned: note.isPinned);
       final revertedNotes = List<NoteEntity>.from(currentState.notes);
@@ -783,7 +543,6 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
     final currentState = state as NotesLoaded;
     
     try {
-      print('🤖 Summarizing note: ${event.id}');
       final updatedNote = await summarizeNoteUseCase(event.id);
       
       // Update the note in the list
@@ -805,12 +564,8 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
         notes: updatedNotes,
         filteredNotes: updatedFilteredNotes,
       ));
-      
-      print('✅ Note summarized successfully');
     } catch (e) {
-      print('❌ Failed to summarize note: $e');
       emit(NotesError(e.toString().replaceFirst('Exception: ', '')));
     }
   }
 }
-
