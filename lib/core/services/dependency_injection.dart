@@ -11,8 +11,8 @@ import '../../features/auth/domain/usecases/logout_usecase.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 
 import '../../features/notes/data/datasources/notes_local_datasource.dart';
-import '../../features/notes/data/datasources/notes_remote_datasource.dart';
 import '../../features/notes/data/repositories/notes_repository_impl.dart';
+import 'notes_api_service.dart';
 import '../../features/notes/domain/repositories/notes_repository.dart';
 import '../../features/notes/domain/usecases/get_notes_usecase.dart';
 import '../../features/notes/domain/usecases/create_note_usecase.dart';
@@ -27,6 +27,7 @@ void setupDependencyInjection() {
   // External dependencies
   getIt.registerLazySingleton(() => Dio());
   getIt.registerLazySingleton(() => Connectivity());
+  getIt.registerLazySingleton(() => NotesApiService());
 
   // Data sources
   getIt.registerLazySingleton<AuthRemoteDataSource>(
@@ -35,20 +36,13 @@ void setupDependencyInjection() {
   getIt.registerLazySingleton<NotesLocalDataSource>(
     () => NotesLocalDataSourceImpl(),
   );
-  getIt.registerLazySingleton<NotesRemoteDataSource>(
-    () => NotesRemoteDataSourceImpl(getIt()),
-  );
 
   // Repositories
   getIt.registerLazySingleton<AuthRepository>(
     () => AuthRepositoryImpl(getIt()),
   );
   getIt.registerLazySingleton<NotesRepository>(
-    () => NotesRepositoryImpl(
-      localDataSource: getIt(),
-      remoteDataSource: getIt(),
-      connectivity: getIt(),
-    ),
+    () => NotesRepositoryImpl(getIt(), getIt()),
   );
 
   // Use cases

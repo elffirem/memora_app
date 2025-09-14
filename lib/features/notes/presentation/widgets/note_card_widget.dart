@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -23,8 +24,7 @@ class NoteCardWidget extends StatefulWidget {
   State<NoteCardWidget> createState() => _NoteCardWidgetState();
 }
 
-class _NoteCardWidgetState extends State<NoteCardWidget>
-    with SingleTickerProviderStateMixin {
+class _NoteCardWidgetState extends State<NoteCardWidget> with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
 
@@ -52,6 +52,7 @@ class _NoteCardWidgetState extends State<NoteCardWidget>
 
   @override
   Widget build(BuildContext context) {
+    print('🎨 Building NoteCard for: ${widget.note.title} (pinned: ${widget.note.isPinned})');
     return AnimatedBuilder(
       animation: _scaleAnimation,
       builder: (context, child) {
@@ -70,7 +71,9 @@ class _NoteCardWidgetState extends State<NoteCardWidget>
               ),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: widget.note.isPinned ? AppTheme.primaryOrange.withOpacity(0.5) : AppTheme.primaryCyan.withOpacity(0.5),
+                color: widget.note.isPinned
+                    ? AppTheme.primaryOrange.withOpacity(0.5)
+                    : AppTheme.primaryCyan.withOpacity(0.5),
                 width: 1,
               ),
               boxShadow: [
@@ -95,7 +98,11 @@ class _NoteCardWidgetState extends State<NoteCardWidget>
                 onTapUp: (_) => _animationController.reverse(),
                 onTapCancel: () => _animationController.reverse(),
                 borderRadius: BorderRadius.circular(20),
-                child: Stack(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    minHeight: 140, // Minimum height for consistent card size
+                  ),
+                  child: Stack(
                   children: [
                     // Pin indicator for pinned notes
                     if (widget.note.isPinned)
@@ -118,7 +125,7 @@ class _NoteCardWidgetState extends State<NoteCardWidget>
                           ),
                         ),
                       ),
-                    
+
                     // Main content
                     Padding(
                       padding: const EdgeInsets.all(28),
@@ -131,12 +138,14 @@ class _NoteCardWidgetState extends State<NoteCardWidget>
                             children: [
                               Expanded(
                                 child: Text(
-                                  widget.note.title.isEmpty ? 'UNTITLED' : widget.note.title.toUpperCase(),
+                                  widget.note.title.isEmpty
+                                      ? 'UNTITLED'
+                                      : widget.note.title.toUpperCase(),
                                   style: GoogleFonts.jetBrainsMono(
                                     fontSize: 20,
                                     fontWeight: FontWeight.w800,
-                                    color: widget.note.title.isEmpty 
-                                        ? AppTheme.textMuted 
+                                    color: widget.note.title.isEmpty
+                                        ? AppTheme.textMuted
                                         : AppTheme.textPrimary,
                                     letterSpacing: -0.02,
                                     height: 1.3,
@@ -146,23 +155,33 @@ class _NoteCardWidgetState extends State<NoteCardWidget>
                                 ),
                               ),
                               const SizedBox(width: 16),
-                              
-                              // Action buttons 
+
+                              // Action buttons
                               AnimatedOpacity(
-                                opacity:  1.0 ,
+                                opacity: 1.0,
                                 duration: const Duration(milliseconds: 200),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     _buildActionButton(
-                                      icon: '★',
-                                      onTap: widget.onTogglePin,
+                                      iconData: Icons.star,
+                                      onTap: () {
+                                        // Haptic feedback
+                                        HapticFeedback.lightImpact();
+                                        // Call the original callback
+                                        widget.onTogglePin();
+                                      },
                                       isActive: widget.note.isPinned,
                                     ),
-                                    const SizedBox(width: 8),
+                                    SizedBox(width: 8),
                                     _buildActionButton(
-                                      icon: '⧗',
-                                      onTap: widget.onDelete,
+                                      iconData: Icons.delete,
+                                      onTap: () {
+                                        // Haptic feedback
+                                        HapticFeedback.mediumImpact();
+                                        // Call the original callback
+                                        widget.onDelete();
+                                      },
                                       isDestructive: true,
                                     ),
                                   ],
@@ -170,7 +189,7 @@ class _NoteCardWidgetState extends State<NoteCardWidget>
                               ),
                             ],
                           ),
-                          
+
                           if (widget.note.content.isNotEmpty) ...[
                             const SizedBox(height: 16),
                             Text(
@@ -185,9 +204,9 @@ class _NoteCardWidgetState extends State<NoteCardWidget>
                               overflow: TextOverflow.ellipsis,
                             ),
                           ],
-                          
+
                           const SizedBox(height: 18),
-                          
+
                           // Footer with timestamp
                           Row(
                             children: [
@@ -224,6 +243,7 @@ class _NoteCardWidgetState extends State<NoteCardWidget>
                     ),
                   ],
                 ),
+                ),
               ),
             ),
           ),
@@ -233,44 +253,44 @@ class _NoteCardWidgetState extends State<NoteCardWidget>
   }
 
   Widget _buildActionButton({
-    required String icon,
+    required IconData iconData,
     required VoidCallback onTap,
     bool isActive = false,
     bool isDestructive = false,
   }) {
+    // Renk kontrolü tek yerde
+    final Color effectiveColor = isActive
+        ? AppTheme.primaryOrange
+        : isDestructive
+            ? AppTheme.primaryRed
+            : AppTheme.textTertiary;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: isActive 
+          color: isActive
               ? AppTheme.primaryOrange.withOpacity(0.2)
-              : isDestructive 
+              : isDestructive
                   ? AppTheme.primaryRed.withOpacity(0.1)
                   : Colors.black.withOpacity(0.6),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isActive 
+            color: isActive
                 ? AppTheme.primaryOrange
-                : isDestructive 
+                : isDestructive
                     ? AppTheme.primaryRed
                     : AppTheme.backgroundCard,
             width: 1,
           ),
         ),
         child: Center(
-          child: Text(
-            icon,
-            style: GoogleFonts.jetBrainsMono(
-              fontSize: 16,
-              fontWeight: FontWeight.w900,
-              color: isActive 
-                  ? AppTheme.primaryOrange
-                  : isDestructive 
-                      ? AppTheme.primaryRed
-                      : AppTheme.textTertiary,
-            ),
+          child: Icon(
+            iconData,
+            size: 18,
+            color: effectiveColor, // renk otomatik handle ediliyor
           ),
         ),
       ),

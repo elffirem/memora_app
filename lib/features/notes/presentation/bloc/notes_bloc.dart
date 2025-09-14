@@ -293,9 +293,12 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
     Emitter<NotesState> emit,
   ) async {
     try {
-      await createNoteUseCase(event.title, event.content);
+      print('📝 Creating note: ${event.title}');
+      await createNoteUseCase(title: event.title, content: event.content);
+      print('✅ Note created successfully, reloading notes...');
       add(NotesLoadRequested());
     } catch (e) {
+      print('❌ Note creation failed: $e');
       emit(NotesError(e.toString().replaceFirst('Exception: ', '')));
     }
   }
@@ -305,7 +308,7 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
     Emitter<NotesState> emit,
   ) async {
     try {
-      await updateNoteUseCase(event.id, event.title, event.content);
+      await updateNoteUseCase(id: event.id, title: event.title, content: event.content);
       add(NotesLoadRequested());
     } catch (e) {
       emit(NotesError(e.toString().replaceFirst('Exception: ', '')));
@@ -316,10 +319,51 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
     NotesDeleteRequested event,
     Emitter<NotesState> emit,
   ) async {
+    if (state is! NotesLoaded) return;
+    
+    final currentState = state as NotesLoaded;
+    
+    // Find the note to delete
+    final noteIndex = currentState.notes.indexWhere((note) => note.id == event.id);
+    if (noteIndex == -1) return;
+    
+    final noteToDelete = currentState.notes[noteIndex];
+    
+    // Remove the note from the list immediately
+    final updatedNotes = List<NoteEntity>.from(currentState.notes);
+    updatedNotes.removeAt(noteIndex);
+    
+    // Update filtered notes as well
+    final filteredNoteIndex = currentState.filteredNotes.indexWhere((note) => note.id == event.id);
+    final updatedFilteredNotes = List<NoteEntity>.from(currentState.filteredNotes);
+    if (filteredNoteIndex != -1) {
+      updatedFilteredNotes.removeAt(filteredNoteIndex);
+    }
+    
+    // Emit updated state immediately (no loading)
+    emit(currentState.copyWith(
+      notes: updatedNotes,
+      filteredNotes: updatedFilteredNotes,
+      recentlyDeletedNote: noteToDelete, // Store for undo functionality
+    ));
+    
+    // Perform the actual delete in background
     try {
+      print('🗑️ Deleting note: ${event.id}');
       await deleteNoteUseCase(event.id);
-      add(NotesLoadRequested());
+      print('✅ Note deleted successfully');
     } catch (e) {
+      print('❌ Note deletion failed: $e');
+      // Revert the change if it failed
+      final revertedNotes = List<NoteEntity>.from(currentState.notes);
+      final revertedFilteredNotes = List<NoteEntity>.from(currentState.filteredNotes);
+      
+      emit(currentState.copyWith(
+        notes: revertedNotes,
+        filteredNotes: revertedFilteredNotes,
+        recentlyDeletedNote: null,
+      ));
+      
       emit(NotesError(e.toString().replaceFirst('Exception: ', '')));
     }
   }
@@ -328,10 +372,46 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
     NotesUndoDeleteRequested event,
     Emitter<NotesState> emit,
   ) async {
+    if (state is! NotesLoaded) return;
+    
+    final currentState = state as NotesLoaded;
+    
+    // Add the note back to the list immediately
+    final updatedNotes = List<NoteEntity>.from(currentState.notes);
+    updatedNotes.add(event.note);
+    
+    // Sort notes (pinned first)
+    final sortedNotes = _sortNotes(updatedNotes);
+    
+    // Update filtered notes as well
+    final updatedFilteredNotes = List<NoteEntity>.from(currentState.filteredNotes);
+    updatedFilteredNotes.add(event.note);
+    final sortedFilteredNotes = _sortNotes(updatedFilteredNotes);
+    
+    // Emit updated state immediately (no loading)
+    emit(currentState.copyWith(
+      notes: sortedNotes,
+      filteredNotes: sortedFilteredNotes,
+      recentlyDeletedNote: null, // Clear the recently deleted note
+    ));
+    
+    // Perform the actual create in background
     try {
-      await createNoteUseCase(event.note.title, event.note.content);
-      add(NotesLoadRequested());
+      print('🔄 Restoring note: ${event.note.title}');
+      await createNoteUseCase(title: event.note.title, content: event.note.content);
+      print('✅ Note restored successfully');
     } catch (e) {
+      print('❌ Note restoration failed: $e');
+      // Revert the change if it failed
+      final revertedNotes = List<NoteEntity>.from(currentState.notes);
+      final revertedFilteredNotes = List<NoteEntity>.from(currentState.filteredNotes);
+      
+      emit(currentState.copyWith(
+        notes: revertedNotes,
+        filteredNotes: revertedFilteredNotes,
+        recentlyDeletedNote: event.note, // Restore the recently deleted note
+      ));
+      
       emit(NotesError(e.toString().replaceFirst('Exception: ', '')));
     }
   }
@@ -340,10 +420,62 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
     NotesTogglePinRequested event,
     Emitter<NotesState> emit,
   ) async {
+    if (state is! NotesLoaded) return;
+    
+    final currentState = state as NotesLoaded;
+    
+    // Find the note and toggle its pin status immediately in UI
+    final noteIndex = currentState.notes.indexWhere((note) => note.id == event.id);
+    if (noteIndex == -1) return;
+    
+    final note = currentState.notes[noteIndex];
+    final updatedNote = note.copyWith(isPinned: !note.isPinned);
+    
+    // Update the notes list immediately
+    final updatedNotes = List<NoteEntity>.from(currentState.notes);
+    updatedNotes[noteIndex] = updatedNote;
+    
+    // Sort notes (pinned first)
+    final sortedNotes = _sortNotes(updatedNotes);
+    
+    // Update filtered notes as well
+    final filteredNoteIndex = currentState.filteredNotes.indexWhere((note) => note.id == event.id);
+    final updatedFilteredNotes = List<NoteEntity>.from(currentState.filteredNotes);
+    if (filteredNoteIndex != -1) {
+      updatedFilteredNotes[filteredNoteIndex] = updatedNote;
+    }
+    final sortedFilteredNotes = _sortNotes(updatedFilteredNotes);
+    
+    // Emit updated state immediately (no loading)
+    emit(currentState.copyWith(
+      notes: sortedNotes,
+      filteredNotes: sortedFilteredNotes,
+    ));
+    
+    // Perform the actual toggle in background
     try {
+      print('📌 Toggling pin for note: ${event.id}');
       await togglePinNoteUseCase(event.id);
-      add(NotesLoadRequested());
+      print('✅ Pin toggle successful');
     } catch (e) {
+      print('❌ Pin toggle failed: $e');
+      // Revert the change if it failed
+      final revertedNote = note.copyWith(isPinned: note.isPinned);
+      final revertedNotes = List<NoteEntity>.from(currentState.notes);
+      revertedNotes[noteIndex] = revertedNote;
+      final sortedRevertedNotes = _sortNotes(revertedNotes);
+      
+      final revertedFilteredNotes = List<NoteEntity>.from(currentState.filteredNotes);
+      if (filteredNoteIndex != -1) {
+        revertedFilteredNotes[filteredNoteIndex] = revertedNote;
+      }
+      final sortedRevertedFilteredNotes = _sortNotes(revertedFilteredNotes);
+      
+      emit(currentState.copyWith(
+        notes: sortedRevertedNotes,
+        filteredNotes: sortedRevertedFilteredNotes,
+      ));
+      
       emit(NotesError(e.toString().replaceFirst('Exception: ', '')));
     }
   }

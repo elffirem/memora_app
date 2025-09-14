@@ -56,7 +56,7 @@ class NotesApp extends StatelessWidget {
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.system,
-        home: const NotesHomePage(),
+        home: const AuthWrapper(),
         debugShowCheckedModeBanner: false,
       ),
     );

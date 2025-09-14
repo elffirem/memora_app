@@ -6,8 +6,8 @@ class UpdateNoteUseCase {
 
   UpdateNoteUseCase(this.repository);
 
-  Future<NoteEntity> call(String id, String title, String content) {
-    return repository.updateNote(id, title, content);
+  Future<NoteEntity> call({required String id, required String title, required String content}) {
+    return repository.updateNote(id: id, title: title, content: content);
   }
 }
 
